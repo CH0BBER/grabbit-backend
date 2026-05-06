@@ -1,1 +1,547 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grabbit — Grab Everything Before It's Gone</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --black: #080808;
+  --white: #f4f3ee;
+  --accent: #00c853;
+  --accent2: #00e676;
+  --accent3: #ffd600;
+  --card: #111111;
+  --card2: #161616;
+  --border: #1e1e1e;
+  --gray: #666;
+  --trust: #00c853;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body { background:var(--black); color:var(--white); font-family:'DM Sans',sans-serif; overflow-x:hidden; cursor:none; }
+.cursor { width:10px; height:10px; background:var(--accent); border-radius:50%; position:fixed; pointer-events:none; z-index:9999; mix-blend-mode:difference; }
+.cursor-ring { width:32px; height:32px; border:1.5px solid rgba(0,200,83,0.6); border-radius:50%; position:fixed; pointer-events:none; z-index:9998; transition:all 0.14s ease; }
+.ann-bar { background:var(--accent); color:white; text-align:center; padding:10px; font-size:13px; font-weight:500; position:relative; overflow:hidden; }
+.ann-bar::before { content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent); animation:shimmer 2.5s infinite; }
+.live-dot { width:7px; height:7px; background:white; border-radius:50%; display:inline-block; animation:pulse 1s infinite; margin-right:6px; }
+nav { display:flex; justify-content:space-between; align-items:center; padding:20px 48px; border-bottom:1px solid var(--border); position:sticky; top:0; background:rgba(8,8,8,0.97); backdrop-filter:blur(16px); z-index:100; }
+.logo { font-family:'Syne',sans-serif; font-size:26px; font-weight:800; letter-spacing:-1px; }
+.logo span { color:var(--accent); }
+.nav-links { display:flex; gap:28px; list-style:none; align-items:center; }
+.nav-links a { color:var(--gray); text-decoration:none; font-size:14px; font-weight:500; transition:color 0.2s; }
+.nav-links a:hover { color:var(--white); }
+.nav-cta { background:var(--accent)!important; color:white!important; padding:10px 22px!important; border-radius:100px; font-weight:600!important; animation:navPulse 2s infinite; }
+.nav-trust { font-size:12px; color:var(--trust); font-weight:500; }
+.hero { min-height:92vh; display:flex; flex-direction:column; justify-content:center; padding:80px 48px; position:relative; overflow:hidden; }
+.hero-bg { position:absolute; inset:0; background:radial-gradient(ellipse 50% 70% at 85% 40%, rgba(0,200,83,0.07) 0%, transparent 65%), radial-gradient(ellipse 30% 40% at 10% 90%, rgba(0,230,118,0.04) 0%, transparent 60%); pointer-events:none; }
+.social-ticker { display:inline-flex; align-items:center; gap:8px; background:rgba(0,230,118,0.08); border:1px solid rgba(0,230,118,0.2); padding:8px 16px; border-radius:100px; font-size:13px; color:var(--trust); font-weight:500; width:fit-content; margin-bottom:28px; }
+.sdot { width:6px; height:6px; background:var(--trust); border-radius:50%; animation:pulse 1s infinite; }
+.hero-title { font-family:'Syne',sans-serif; font-size:clamp(54px,9vw,120px); font-weight:800; line-height:0.92; letter-spacing:-4px; margin-bottom:28px; animation:fadeUp 0.5s 0.1s ease forwards; opacity:0; }
+.hero-title .green { color:var(--accent); }
+.hero-title .stroke { -webkit-text-stroke:2px var(--white); color:transparent; }
+.hero-sub { font-size:18px; color:var(--gray); max-width:500px; line-height:1.65; margin-bottom:16px; font-weight:300; animation:fadeUp 0.5s 0.2s ease forwards; opacity:0; }
+.urgency-bar { display:inline-flex; align-items:center; gap:10px; background:rgba(0,200,83,0.08); border:1px solid rgba(0,200,83,0.25); padding:10px 18px; border-radius:12px; margin-bottom:36px; width:fit-content; animation:fadeUp 0.5s 0.25s ease forwards; opacity:0; }
+.urgency-bar .fire { font-size:16px; animation:shake 0.6s infinite; }
+.urgency-bar .utext { font-size:13px; color:#69f0ae; font-weight:500; }
+.urgency-bar .timer { font-family:'Syne',sans-serif; font-size:15px; font-weight:800; color:var(--accent); }
+.search-wrap { display:flex; gap:10px; max-width:700px; animation:fadeUp 0.5s 0.3s ease forwards; opacity:0; }
+.search-bar { flex:1; display:flex; align-items:center; background:var(--card2); border:1.5px solid var(--border); border-radius:16px; padding:0 20px; gap:12px; transition:border-color 0.2s,box-shadow 0.2s; }
+.search-bar:focus-within { border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,200,83,0.08); }
+.search-bar input { flex:1; background:none; border:none; outline:none; color:var(--white); font-size:15px; font-family:'DM Sans',sans-serif; padding:18px 0; }
+.search-bar input::placeholder { color:#444; }
+.search-divider { width:1px; height:24px; background:var(--border); }
+.search-select { background:none; border:none; outline:none; color:var(--gray); font-family:'DM Sans',sans-serif; font-size:13px; padding:0 10px; cursor:pointer; }
+.search-select option { background:var(--card); }
+.search-btn { background:var(--accent); color:white; border:none; border-radius:14px; padding:0 28px; font-family:'Syne',sans-serif; font-size:15px; font-weight:700; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
+.search-btn:hover { background:#00a846; transform:scale(1.03); }
+.stats { display:flex; gap:48px; margin-top:60px; animation:fadeUp 0.5s 0.4s ease forwards; opacity:0; flex-wrap:wrap; }
+.stat-num { font-family:'Syne',sans-serif; font-size:34px; font-weight:800; }
+.stat-num em { color:var(--accent); font-style:normal; }
+.stat-label { font-size:12px; color:var(--gray); margin-top:2px; }
+.nearby-section { padding:80px 48px; border-top:1px solid var(--border); background:radial-gradient(ellipse 60% 50% at 50% 0%, rgba(0,200,83,0.05) 0%, transparent 70%); }
+.nearby-header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:40px; flex-wrap:wrap; gap:20px; }
+.nearby-titles .eyebrow { font-size:11px; color:var(--accent); letter-spacing:3px; text-transform:uppercase; font-weight:600; margin-bottom:10px; }
+.nearby-titles h2 { font-family:'Syne',sans-serif; font-size:clamp(28px,4vw,48px); font-weight:800; letter-spacing:-1.5px; line-height:1.05; }
+.nearby-titles h2 em { color:var(--accent); font-style:normal; }
+.loc-btn { display:inline-flex; align-items:center; gap:10px; background:var(--accent); color:white; border:none; border-radius:100px; padding:14px 28px; font-family:'Syne',sans-serif; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.2s; animation:ctaPulse 2s infinite; white-space:nowrap; }
+.loc-btn:hover { background:#00a846; transform:scale(1.04); }
+.loc-btn .loc-icon { font-size:18px; animation:bounce 1s infinite; }
+.loc-btn.loading { background:#333; animation:none; cursor:wait; }
+.loc-btn.done { background:#1a1a1a; border:1px solid var(--accent); color:var(--accent); animation:none; }
+.loc-status { display:flex; align-items:center; gap:10px; padding:14px 20px; border-radius:12px; font-size:13px; font-weight:500; margin-bottom:28px; }
+.loc-status.detecting { background:rgba(0,200,83,0.08); border:1px solid rgba(0,200,83,0.2); color:#69f0ae; }
+.loc-status.success { background:rgba(0,200,83,0.08); border:1px solid rgba(0,200,83,0.2); color:#69f0ae; }
+.loc-status.error { background:rgba(255,68,68,0.08); border:1px solid rgba(255,68,68,0.2); color:#ff6b6b; }
+.loc-status-dot { width:8px; height:8px; border-radius:50%; background:currentColor; animation:pulse 1s infinite; }
+.cafe-filters { display:flex; gap:8px; margin-bottom:28px; flex-wrap:wrap; }
+.cafe-filter { background:var(--card); border:1px solid var(--border); border-radius:100px; padding:8px 18px; font-size:12px; font-weight:600; color:var(--gray); cursor:pointer; transition:all 0.2s; }
+.cafe-filter.active { background:var(--accent); border-color:var(--accent); color:white; }
+.cafe-filter:hover:not(.active) { border-color:#444; color:var(--white); }
+.cafe-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+.cafe-card { background:var(--card); border:1px solid var(--border); border-radius:20px; overflow:hidden; transition:all 0.3s; cursor:pointer; text-decoration:none; display:block; position:relative; }
+.cafe-card:hover { border-color:var(--accent); transform:translateY(-4px); box-shadow:0 16px 40px rgba(0,200,83,0.1); }
+.cafe-img { width:100%; height:140px; display:flex; align-items:center; justify-content:center; font-size:48px; position:relative; }
+.cafe-open { position:absolute; top:10px; left:10px; background:rgba(0,200,83,0.9); color:white; font-size:10px; font-weight:700; padding:4px 10px; border-radius:100px; }
+.cafe-dist { position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.7); color:var(--accent); font-size:10px; font-weight:700; padding:4px 10px; border-radius:100px; }
+.cafe-body { padding:18px; }
+.cafe-name { font-family:'Syne',sans-serif; font-size:16px; font-weight:700; color:var(--white); margin-bottom:5px; line-height:1.3; }
+.cafe-type { font-size:11px; color:var(--accent); text-transform:uppercase; letter-spacing:1px; font-weight:600; margin-bottom:8px; }
+.cafe-addr { font-size:12px; color:var(--gray); margin-bottom:12px; line-height:1.4; }
+.cafe-meta { display:flex; justify-content:space-between; align-items:center; }
+.cafe-rating { display:flex; align-items:center; gap:4px; font-size:12px; color:var(--accent3); font-weight:600; }
+.cafe-btn { background:var(--accent); color:white; border:none; border-radius:8px; padding:7px 14px; font-size:11px; font-weight:700; cursor:pointer; font-family:'Syne',sans-serif; transition:all 0.2s; text-decoration:none; display:inline-block; }
+.cafe-btn:hover { background:#00a846; }
+.nearby-empty { text-align:center; padding:80px 20px; }
+.nearby-empty .empty-icon { font-size:64px; margin-bottom:20px; opacity:0.4; }
+.nearby-empty h3 { font-family:'Syne',sans-serif; font-size:24px; font-weight:800; margin-bottom:10px; color:var(--gray); }
+.nearby-empty p { font-size:14px; color:#444; max-width:360px; margin:0 auto 24px; line-height:1.6; }
+.skeleton { background:linear-gradient(90deg,var(--card) 25%,#1a1a1a 50%,var(--card) 75%); background-size:200% 100%; animation:skeleton 1.5s infinite; border-radius:8px; }
+@keyframes skeleton { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+.skel-card { background:var(--card); border:1px solid var(--border); border-radius:20px; overflow:hidden; }
+.skel-img { height:140px; }
+.skel-body { padding:18px; }
+.skel-line { height:14px; margin-bottom:10px; border-radius:4px; }
+.skel-line.short { width:60%; }
+.skel-line.med { width:80%; }
+.section { padding:90px 48px; border-top:1px solid var(--border); }
+.section-eyebrow { font-size:11px; color:var(--accent); letter-spacing:3px; text-transform:uppercase; font-weight:600; margin-bottom:12px; }
+.section-title { font-family:'Syne',sans-serif; font-size:clamp(30px,4vw,52px); font-weight:800; letter-spacing:-1.5px; line-height:1.05; margin-bottom:52px; }
+.section-title em { color:var(--accent); font-style:normal; }
+.trust-bar { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1px; background:var(--border); border:1px solid var(--border); border-radius:16px; overflow:hidden; margin-bottom:52px; }
+.trust-item { background:var(--card); padding:22px; display:flex; flex-direction:column; gap:5px; }
+.trust-icon { font-size:20px; }
+.trust-title { font-family:'Syne',sans-serif; font-size:13px; font-weight:700; }
+.trust-sub { font-size:11px; color:var(--gray); }
+.cat-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
+.cat-card { background:var(--card); border:1px solid var(--border); border-radius:20px; padding:28px; cursor:pointer; transition:all 0.3s ease; position:relative; overflow:hidden; text-decoration:none; display:block; }
+.cat-card::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background:var(--cc,var(--accent)); transform:scaleX(0); transform-origin:left; transition:transform 0.3s; }
+.cat-card:hover { border-color:var(--cc,var(--accent)); transform:translateY(-5px); box-shadow:0 20px 40px rgba(0,0,0,0.4); }
+.cat-card:hover::after { transform:scaleX(1); }
+.cat-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; }
+.cat-icon { font-size:32px; }
+.cat-badge { font-size:10px; font-weight:700; background:rgba(255,214,0,0.12); color:var(--accent3); border:1px solid rgba(255,214,0,0.2); padding:3px 10px; border-radius:100px; letter-spacing:0.5px; }
+.cat-name { font-family:'Syne',sans-serif; font-size:19px; font-weight:700; color:var(--white); margin-bottom:6px; }
+.cat-desc { font-size:13px; color:var(--gray); line-height:1.5; margin-bottom:16px; }
+.cat-meta { display:flex; justify-content:space-between; align-items:center; }
+.viewers { display:inline-flex; align-items:center; gap:5px; font-size:11px; color:#69f0ae; font-weight:500; }
+.vdot { width:5px; height:5px; background:#00c853; border-radius:50%; animation:pulse 1s infinite; }
+.cat-arrow { font-size:18px; color:var(--gray); transition:all 0.3s; }
+.cat-card:hover .cat-arrow { color:var(--cc,var(--accent)); transform:translate(3px,-3px); }
+.countdown-wrap { background:linear-gradient(135deg,rgba(0,200,83,0.08),rgba(0,200,83,0.02)); border:1px solid rgba(0,200,83,0.15); border-radius:20px; padding:40px 48px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:24px; margin-bottom:52px; }
+.countdown-left h3 { font-family:'Syne',sans-serif; font-size:24px; font-weight:800; margin-bottom:6px; }
+.countdown-left p { font-size:14px; color:var(--gray); }
+.countdown-timer { display:flex; gap:12px; align-items:center; }
+.count-block { text-align:center; }
+.count-num { font-family:'Syne',sans-serif; font-size:42px; font-weight:800; color:var(--accent); line-height:1; background:var(--card); border:1px solid var(--border); padding:12px 18px; border-radius:12px; min-width:70px; display:block; }
+.count-label { font-size:10px; color:var(--gray); margin-top:6px; letter-spacing:1px; text-transform:uppercase; }
+.count-sep { font-family:'Syne',sans-serif; font-size:32px; font-weight:800; color:var(--accent); padding-bottom:16px; }
+.deals-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:14px; }
+.deal-card { background:var(--card); border:1px solid var(--border); border-radius:18px; overflow:hidden; transition:all 0.3s; cursor:pointer; text-decoration:none; display:block; position:relative; }
+.deal-card:hover { border-color:#333; transform:translateY(-4px); box-shadow:0 16px 32px rgba(0,0,0,0.5); }
+.scarcity { position:absolute; top:12px; left:12px; background:rgba(0,200,83,0.9); color:white; font-size:10px; font-weight:700; padding:4px 10px; border-radius:100px; }
+.hot-badge { position:absolute; top:12px; right:12px; background:rgba(255,214,0,0.9); color:#000; font-size:10px; font-weight:700; padding:4px 10px; border-radius:100px; }
+.deal-img { width:100%; height:150px; background:linear-gradient(135deg,#161616,#1e1e1e); display:flex; align-items:center; justify-content:center; font-size:44px; }
+.deal-body { padding:16px; }
+.deal-cat { font-size:10px; color:var(--accent); letter-spacing:1.5px; text-transform:uppercase; font-weight:600; margin-bottom:5px; }
+.deal-name { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; color:var(--white); margin-bottom:8px; line-height:1.3; }
+.deal-social { font-size:11px; color:var(--gray); margin-bottom:10px; }
+.deal-social strong { color:var(--trust); }
+.deal-price-row { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+.deal-price { font-size:20px; font-weight:700; color:var(--trust); font-family:'Syne',sans-serif; }
+.deal-old { font-size:12px; color:var(--gray); text-decoration:line-through; }
+.deal-save { background:rgba(0,200,83,0.12); color:var(--trust); border-radius:100px; padding:2px 8px; font-size:10px; font-weight:700; border:1px solid rgba(0,200,83,0.2); }
+.deal-btn { width:100%; background:var(--accent); color:white; border:none; border-radius:10px; padding:11px; font-family:'Syne',sans-serif; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; }
+.deal-btn:hover { background:#00a846; }
+.steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1px; background:var(--border); border:1px solid var(--border); border-radius:20px; overflow:hidden; }
+.step { background:var(--card); padding:36px 28px; }
+.step-num { font-family:'Syne',sans-serif; font-size:72px; font-weight:800; color:rgba(0,200,83,0.08); line-height:1; margin-bottom:20px; }
+.step-title { font-family:'Syne',sans-serif; font-size:17px; font-weight:700; margin-bottom:8px; }
+.step-desc { font-size:13px; color:var(--gray); line-height:1.6; }
+.testi-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+.testi-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; }
+.testi-stars { color:var(--accent3); font-size:14px; margin-bottom:12px; }
+.testi-text { font-size:14px; color:#aaa; line-height:1.6; margin-bottom:16px; font-style:italic; }
+.testi-author { display:flex; align-items:center; gap:10px; }
+.testi-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--accent),#69f0ae); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; font-family:'Syne',sans-serif; color:white; }
+.testi-name { font-size:13px; font-weight:600; color:var(--white); }
+.testi-loc { font-size:11px; color:var(--gray); }
+.cta-section { padding:100px 48px; text-align:center; background:radial-gradient(ellipse 60% 80% at 50% 50%,rgba(0,200,83,0.06) 0%,transparent 70%); border-top:1px solid var(--border); }
+.cta-title { font-family:'Syne',sans-serif; font-size:clamp(36px,6vw,80px); font-weight:800; letter-spacing:-2px; line-height:1; margin-bottom:20px; }
+.cta-sub { font-size:16px; color:var(--gray); max-width:480px; margin:0 auto 40px; line-height:1.6; }
+.cta-btn { display:inline-flex; align-items:center; gap:10px; background:var(--accent); color:white; border:none; border-radius:100px; padding:18px 40px; font-family:'Syne',sans-serif; font-size:17px; font-weight:700; cursor:pointer; transition:all 0.2s; text-decoration:none; animation:ctaPulse 2s infinite; }
+.cta-btn:hover { background:#00a846; transform:scale(1.05); }
+.cta-trust { margin-top:16px; font-size:12px; color:var(--gray); }
+footer { padding:40px 48px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; }
+.footer-logo { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; }
+.footer-logo span { color:var(--accent); }
+.footer-text { font-size:12px; color:var(--gray); }
+.footer-links { display:flex; gap:20px; }
+.footer-links a { font-size:12px; color:var(--gray); text-decoration:none; transition:color 0.2s; }
+.footer-links a:hover { color:var(--white); }
+@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.8)} }
+@keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
+@keyframes shake { 0%,100%{transform:rotate(-10deg)} 50%{transform:rotate(10deg)} }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+@keyframes navPulse { 0%,100%{box-shadow:0 0 0 0 rgba(0,200,83,0.4)} 50%{box-shadow:0 0 0 6px rgba(0,200,83,0)} }
+@keyframes ctaPulse { 0%,100%{box-shadow:0 0 0 0 rgba(0,200,83,0.4)} 50%{box-shadow:0 0 0 10px rgba(0,200,83,0)} }
+::-webkit-scrollbar{width:3px} ::-webkit-scrollbar-track{background:var(--black)} ::-webkit-scrollbar-thumb{background:#222;border-radius:2px}
+@media(max-width:768px){
+  nav{padding:16px 20px} .nav-links{display:none}
+  .hero{padding:50px 20px} .section{padding:60px 20px}
+  .nearby-section{padding:60px 20px}
+  .stats{gap:20px} footer{padding:28px 20px;flex-direction:column;align-items:flex-start}
+  .search-wrap{flex-direction:column} .search-btn{padding:16px;border-radius:12px}
+  .countdown-wrap{flex-direction:column;padding:28px 20px} .cta-section{padding:60px 20px}
+  .nearby-header{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="ann-bar">
+  <span class="live-dot"></span>
+  <strong>🔥 LIVE:</strong> <span id="annText">2,847 people grabbed a deal in the last hour — Don't miss yours!</span>
+</div>
+<nav>
+  <div class="logo">Grab<span>bit</span></div>
+  <ul class="nav-links">
+    <li><a href="#nearby">📍 Nearby</a></li>
+    <li><a href="#categories">Categories</a></li>
+    <li><a href="#deals">Hot Deals</a></li>
+    <li><a href="#nearby" class="nav-cta">Find Nearby →</a></li>
+  </ul>
+  <div class="nav-trust">🔒 Verified & Safe</div>
+</nav>
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="social-ticker">
+    <span class="sdot"></span>
+    <span id="liveCount">1,284</span> people on Grabbit right now
+  </div>
+  <h1 class="hero-title">
+    Don't<br>
+    <span class="green">Miss</span><br>
+    <span class="stroke">Your Deal</span>
+  </h1>
+  <p class="hero-sub">Products, hotels, flights, tickets, cars, courses, and cafes near you — every deal, one place.</p>
+  <div class="urgency-bar">
+    <span class="fire">🔥</span>
+    <span class="utext">Flash deals ending in</span>
+    <span class="timer" id="heroTimer">02:47:33</span>
+    <span class="utext">— grab now!</span>
+  </div>
+  <div class="search-wrap">
+    <div class="search-bar">
+      <span style="color:#444;font-size:16px">🔍</span>
+      <input type="text" placeholder="Search hotels, flights, products, cafes..." id="searchInput" />
+      <div class="search-divider"></div>
+      <select class="search-select" id="catSelect">
+        <option>All</option><option>Products</option><option>Hotels</option>
+        <option>Flights</option><option>Tickets</option><option>Cars</option>
+        <option>Courses</option><option>Food</option>
+      </select>
+    </div>
+    <button class="search-btn" onclick="handleSearch()">Grab It →</button>
+  </div>
+  <div class="stats">
+    <div><div class="stat-num">48,<em>291</em></div><div class="stat-label">Deals grabbed today</div></div>
+    <div><div class="stat-num">50<em>+</em></div><div class="stat-label">Partner platforms</div></div>
+    <div><div class="stat-num">$<em>2.4M</em></div><div class="stat-label">Saved this week</div></div>
+    <div><div class="stat-num">100<em>%</em></div><div class="stat-label">Free — always</div></div>
+  </div>
+</section>
+<section class="nearby-section" id="nearby">
+  <div class="nearby-header">
+    <div class="nearby-titles">
+      <div class="eyebrow">📍 Live Near You</div>
+      <h2>Cafes & Restaurants<br><em>Around You</em></h2>
+    </div>
+    <button class="loc-btn" id="locBtn" onclick="detectLocation()">
+      <span class="loc-icon">📍</span>
+      <span id="locBtnText">Detect My Location</span>
+    </button>
+  </div>
+  <div id="locStatus" style="display:none" class="loc-status detecting">
+    <span class="loc-status-dot"></span>
+    <span id="locStatusText">Detecting your location...</span>
+  </div>
+  <div class="cafe-filters" id="cafeFilters" style="display:none">
+    <button class="cafe-filter active" onclick="filterCafes('all',this)">🍽️ All</button>
+    <button class="cafe-filter" onclick="filterCafes('cafe',this)">☕ Cafes</button>
+    <button class="cafe-filter" onclick="filterCafes('restaurant',this)">🍴 Restaurants</button>
+    <button class="cafe-filter" onclick="filterCafes('fast_food',this)">🍔 Fast Food</button>
+    <button class="cafe-filter" onclick="filterCafes('bar',this)">🍺 Bars</button>
+    <button class="cafe-filter" onclick="filterCafes('bakery',this)">🥐 Bakeries</button>
+  </div>
+  <div id="cafeResults">
+    <div class="nearby-empty" id="emptyState">
+      <div class="empty-icon">📍</div>
+      <h3>Find What's Near You</h3>
+      <p>Click "Detect My Location" and we'll instantly show you the best cafes and restaurants around you!</p>
+      <button class="loc-btn" onclick="detectLocation()">
+        <span class="loc-icon">📍</span> Find Nearby Places
+      </button>
+    </div>
+  </div>
+</section>
+<section class="section" style="padding-top:0;border-top:none">
+  <div class="trust-bar">
+    <div class="trust-item"><span class="trust-icon">🔒</span><span class="trust-title">100% Secure</span><span class="trust-sub">SSL encrypted</span></div>
+    <div class="trust-item"><span class="trust-icon">✅</span><span class="trust-title">Verified Deals</span><span class="trust-sub">Checked daily</span></div>
+    <div class="trust-item"><span class="trust-icon">💸</span><span class="trust-title">Always Free</span><span class="trust-sub">No hidden fees</span></div>
+    <div class="trust-item"><span class="trust-icon">⚡</span><span class="trust-title">Instant Results</span><span class="trust-sub">Seconds, not hours</span></div>
+    <div class="trust-item"><span class="trust-icon">🌍</span><span class="trust-title">Worldwide</span><span class="trust-sub">190+ countries</span></div>
+  </div>
+</section>
+<section class="section" id="categories">
+  <div class="section-eyebrow">Browse All</div>
+  <h2 class="section-title">Everything You Need<br><em>One</em> Place to Find It</h2>
+  <div class="cat-grid">
+    <a class="cat-card" href="https://www.amazon.com" target="_blank" style="--cc:#00c853">
+      <div class="cat-top"><span class="cat-icon">🛍️</span><span class="cat-badge">🔥 MOST GRABBED</span></div>
+      <div class="cat-name">Products</div>
+      <div class="cat-desc">Millions of products. Unbeatable prices. Delivered fast.</div>
+      <div class="cat-meta"><div class="viewers"><span class="vdot"></span><span id="v1">843</span> viewing now</div><span class="cat-arrow">↗</span></div>
+    </a>
+    <a class="cat-card" href="https://www.booking.com" target="_blank" style="--cc:#00a8ff">
+      <div class="cat-top"><span class="cat-icon">🏨</span><span class="cat-badge">UP TO 40% OFF</span></div>
+      <div class="cat-name">Hotels</div>
+      <div class="cat-desc">Best rates on 500,000+ hotels worldwide. Book smarter.</div>
+      <div class="cat-meta"><div class="viewers"><span class="vdot"></span><span id="v2">312</span> viewing now</div><span class="cat-arrow">↗</span></div>
+    </a>
+    <a class="cat-card" href="https://www.skyscanner.com" target="_blank" style="--cc:#00d4ff">
+      <div class="cat-top"><span class="cat-icon">✈️</span><span class="cat-badge">CHEAPEST FARES</span></div>
+      <div class="cat-name">Flights</div>
+      <div class="cat-desc">Compare 100s of airlines instantly. Find the lowest fare.</div>
+      <div class="cat-meta"><div class="viewers"><span class="vdot"></span><span id="v3">567</span> viewing now</div><span class="cat-arrow">↗</span></div>
+    </a>
+    <a class="cat-card" href="https://www.ticketmaster.com" target="_blank" style="--cc:#7c4dff">
+      <div class="cat-top"><span class="cat-icon">🎟️</span><span class="cat-badge">SELLING FAST</span></div>
+      <div class="cat-name">Tickets</div>
+      <div class="cat-desc">Concerts, sports, theatre — never miss a moment.</div>
+      <div class="cat-meta"><div class="viewers"><span class="vdot"></span><span id="v4">189</span> viewing now</div><span class="cat-arrow">↗</span></div>
+    </a>
+    <a class="cat-card" href="https://www.rentalcars.com" target="_blank" style="--cc:#00e676">
+      <div class="cat-top"><span class="cat-icon">🚗</span><span class="cat-badge">SAVE UP TO 35%</span></div>
+      <div class="cat-name">Car Rentals</div>
+      <div class="cat-desc">Best car rental prices worldwide. Pick up anywhere.</div>
+      <div class="cat-meta"><div class="viewers"><span class="vdot"></span><span id="v5">94</span> viewing now</div><span class="cat-arrow">↗</span></div>
+    </a>
+    <a class="cat-card" href="https://www.udemy.com" target="_blank" style="--cc:#a259ff">
+      <div class="cat-top"><span class="cat-icon">🎓</span><span class="cat-badge">FROM $9.99</span></div>
+      <div class="cat-name">Courses</div>
+      <div class="cat-desc">Skills that pay. 200,000+ courses from world experts.</div>
+      <div class="cat-meta"><div class="viewers"><span class="vdot"></span><span id="v6">421</span> viewing now</div><span class="cat-arrow">↗</span></div>
+    </a>
+    <a class="cat-card" href="https://www.ubereats.com" target="_blank" style="--cc:#06c167">
+      <div class="cat-top"><span class="cat-icon">🍕</span><span class="cat-badge">FAST DELIVERY</span></div>
+      <div class="cat-name">Food Delivery</div>
+      <div class="cat-desc">Hungry? Order from top restaurants delivered fast.</div>
+      <div class="cat-meta"><div class="viewers"><span class="vdot"></span><span id="v7">738</span> viewing now</div><span class="cat-arrow">↗</span></div>
+    </a>
+    <a class="cat-card" href="https://www.zalando.com" target="_blank" style="--cc:#ff6d00">
+      <div class="cat-top"><span class="cat-icon">👗</span><span class="cat-badge">NEW ARRIVALS</span></div>
+      <div class="cat-name">Fashion</div>
+      <div class="cat-desc">Latest styles. Top brands. Delivered to your door.</div>
+      <div class="cat-meta"><div class="viewers"><span class="vdot"></span><span id="v8">256</span> viewing now</div><span class="cat-arrow">↗</span></div>
+    </a>
+  </div>
+</section>
+<section class="section" id="deals">
+  <div class="section-eyebrow">⚡ Flash Deals</div>
+  <h2 class="section-title">Deals Ending <em>Soon</em></h2>
+  <div class="countdown-wrap">
+    <div class="countdown-left"><h3>🔥 Flash Sale Ends In</h3><p>These deals disappear when the timer hits zero.</p></div>
+    <div class="countdown-timer">
+      <div class="count-block"><span class="count-num" id="cd-h">02</span><div class="count-label">Hours</div></div>
+      <span class="count-sep">:</span>
+      <div class="count-block"><span class="count-num" id="cd-m">47</span><div class="count-label">Mins</div></div>
+      <span class="count-sep">:</span>
+      <div class="count-block"><span class="count-num" id="cd-s">33</span><div class="count-label">Secs</div></div>
+    </div>
+  </div>
+  <div class="deals-grid">
+    <a class="deal-card" href="https://www.amazon.com/s?k=wireless+headphones" target="_blank">
+      <div class="scarcity">⚡ Only 3 left!</div><div class="hot-badge">🔥 HOT</div>
+      <div class="deal-img">🎧</div>
+      <div class="deal-body">
+        <div class="deal-cat">Products · Amazon</div>
+        <div class="deal-name">Wireless Noise Cancelling Headphones</div>
+        <div class="deal-social"><strong>1,204 people</strong> grabbed this today</div>
+        <div class="deal-price-row"><span class="deal-price">$49</span><span class="deal-old">$89</span><span class="deal-save">Save $40</span></div>
+        <button class="deal-btn">Grab This Deal →</button>
+      </div>
+    </a>
+    <a class="deal-card" href="https://www.booking.com" target="_blank">
+      <div class="scarcity">🏨 2 rooms left!</div>
+      <div class="deal-img">🏖️</div>
+      <div class="deal-body">
+        <div class="deal-cat">Hotels · Booking.com</div>
+        <div class="deal-name">Beachfront Resort — Bali, Indonesia</div>
+        <div class="deal-social"><strong>47 people</strong> viewing right now</div>
+        <div class="deal-price-row"><span class="deal-price">$80</span><span class="deal-old">$150</span><span class="deal-save">Save $70</span></div>
+        <button class="deal-btn">Grab This Deal →</button>
+      </div>
+    </a>
+    <a class="deal-card" href="https://www.skyscanner.com" target="_blank">
+      <div class="scarcity">✈️ 5 seats left!</div>
+      <div class="deal-img">✈️</div>
+      <div class="deal-body">
+        <div class="deal-cat">Flights · Skyscanner</div>
+        <div class="deal-name">Milan → London Round Trip</div>
+        <div class="deal-social"><strong>89 people</strong> grabbed this today</div>
+        <div class="deal-price-row"><span class="deal-price">$65</span><span class="deal-old">$120</span><span class="deal-save">Save $55</span></div>
+        <button class="deal-btn">Grab This Deal →</button>
+      </div>
+    </a>
+    <a class="deal-card" href="https://www.udemy.com" target="_blank">
+      <div class="scarcity">🎓 Deal ends soon!</div><div class="hot-badge">⭐ TOP RATED</div>
+      <div class="deal-img">💻</div>
+      <div class="deal-body">
+        <div class="deal-cat">Courses · Udemy</div>
+        <div class="deal-name">Full Stack Web Dev Bootcamp 2025</div>
+        <div class="deal-social"><strong>3,891 students</strong> enrolled this week</div>
+        <div class="deal-price-row"><span class="deal-price">$13</span><span class="deal-old">$84</span><span class="deal-save">Save $71</span></div>
+        <button class="deal-btn">Grab This Deal →</button>
+      </div>
+    </a>
+  </div>
+</section>
+<section class="section" id="how">
+  <div class="section-eyebrow">Simple</div>
+  <h2 class="section-title">How <em>Grabbit</em> Works</h2>
+  <div class="steps">
+    <div class="step"><div class="step-num">01</div><div class="step-title">📍 Allow Location</div><div class="step-desc">Tap "Detect My Location" — Grabbit instantly finds cafes near you. No typing needed.</div></div>
+    <div class="step"><div class="step-num">02</div><div class="step-title">🔍 Search Anything</div><div class="step-desc">Looking for flights, hotels, products? Type it and we find the best deals instantly.</div></div>
+    <div class="step"><div class="step-num">03</div><div class="step-title">🎯 Pick Your Deal</div><div class="step-desc">Compare options from 50+ platforms side by side. Pick what fits your budget.</div></div>
+    <div class="step"><div class="step-num">04</div><div class="step-title">🔥 Grab It!</div><div class="step-desc">Click through to the trusted platform and complete your purchase. Done.</div></div>
+  </div>
+</section>
+<section class="section">
+  <div class="section-eyebrow">Real People</div>
+  <h2 class="section-title">They <em>Grabbed</em> It.<br>You Should Too.</h2>
+  <div class="testi-grid">
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <div class="testi-text">"Found a great cafe 2 minutes from me instantly! No searching, no typing. Grabbit just showed it."</div>
+      <div class="testi-author"><div class="testi-avatar">S</div><div><div class="testi-name">Sofia M.</div><div class="testi-loc">Milan, Italy 🇮🇹</div></div></div>
+    </div>
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <div class="testi-text">"Found flights, a course AND a cafe all in one sitting. It's addictive and so easy!"</div>
+      <div class="testi-author"><div class="testi-avatar">J</div><div><div class="testi-name">James K.</div><div class="testi-loc">London, UK 🇬🇧</div></div></div>
+    </div>
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <div class="testi-text">"Saved $200 on concert tickets AND found a restaurant nearby. Grabbit does everything!"</div>
+      <div class="testi-author"><div class="testi-avatar">A</div><div><div class="testi-name">Aisha R.</div><div class="testi-loc">Dubai, UAE 🇦🇪</div></div></div>
+    </div>
+  </div>
+</section>
+<section class="cta-section">
+  <h2 class="cta-title">Ready to<br><span style="color:var(--accent)">Grab Yours?</span></h2>
+  <p class="cta-sub">Join thousands grabbing better deals every day. Free. Fast. Grabbit.</p>
+  <a href="#nearby" class="cta-btn">📍 Find Nearby Now →</a>
+  <div class="cta-trust">🔒 Free forever · No signup needed · Works worldwide</div>
+</section>
+<footer>
+  <div class="footer-logo">Grab<span>bit</span></div>
+  <div class="footer-text">© 2025 Grabbit · Everything in one place · Free forever</div>
+  <div class="footer-links"><a href="#">About</a><a href="#">Privacy</a><a href="#">Contact</a><a href="#">Affiliates</a></div>
+</footer>
+<script>
+const cursor=document.getElementById('cursor'),ring=document.getElementById('cursorRing');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cursor.style.transform=`translate(${mx-5}px,${my-5}px)`;});
+(function animRing(){rx+=(mx-rx)*0.12;ry+=(my-ry)*0.12;ring.style.transform=`translate(${rx-16}px,${ry-16}px)`;requestAnimationFrame(animRing);})();
+function handleSearch(){
+  const q=document.getElementById('searchInput').value.trim();
+  const cat=document.getElementById('catSelect').value;
+  if(!q)return;
+  const urls={Products:`https://www.amazon.com/s?k=${encodeURIComponent(q)}`,Hotels:`https://www.booking.com/search.html?ss=${encodeURIComponent(q)}`,Flights:`https://www.skyscanner.com/transport/flights/?query=${encodeURIComponent(q)}`,Tickets:`https://www.ticketmaster.com/search?q=${encodeURIComponent(q)}`,Cars:`https://www.rentalcars.com/?query=${encodeURIComponent(q)}`,Courses:`https://www.udemy.com/courses/search/?q=${encodeURIComponent(q)}`,Food:`https://www.ubereats.com/search?q=${encodeURIComponent(q)}`,All:`https://www.google.com/search?q=${encodeURIComponent(q)}`};
+  window.open(urls[cat]||urls.All,'_blank');
+}
+document.getElementById('searchInput').addEventListener('keydown',e=>{if(e.key==='Enter')handleSearch();});
+let totalSecs=2*3600+47*60+33;
+setInterval(()=>{totalSecs--;if(totalSecs<0)totalSecs=3*3600;const h=Math.floor(totalSecs/3600),m=Math.floor((totalSecs%3600)/60),s=totalSecs%60;const f=n=>String(n).padStart(2,'0');document.getElementById('cd-h').textContent=f(h);document.getElementById('cd-m').textContent=f(m);document.getElementById('cd-s').textContent=f(s);document.getElementById('heroTimer').textContent=`${f(h)}:${f(m)}:${f(s)}`;},1000);
+const vIds=['v1','v2','v3','v4','v5','v6','v7','v8'];
+const vBase=[843,312,567,189,94,421,738,256];
+setInterval(()=>{vIds.forEach((id,i)=>{vBase[i]=Math.max(50,vBase[i]+Math.floor(Math.random()*7)-3);const el=document.getElementById(id);if(el)el.textContent=vBase[i].toLocaleString();});},3000);
+let live=1284;
+setInterval(()=>{live=Math.max(800,live+Math.floor(Math.random()*5)-2);const el=document.getElementById('liveCount');if(el)el.textContent=live.toLocaleString();},4000);
+const msgs=["2,847 people grabbed a deal in the last hour!","🏨 Someone just saved $90 on a hotel in Rome!","✈️ A flight from Milan to NYC just dropped to $312!","☕ 47 people found a cafe near them just now!","⚡ Flash sale ends soon — 1,204 deals grabbed today!"];
+let aIdx=0;
+setInterval(()=>{aIdx=(aIdx+1)%msgs.length;const el=document.getElementById('annText');if(el){el.style.opacity='0';setTimeout(()=>{el.textContent=msgs[aIdx];el.style.opacity='1';},300);}},5000);
+let allPlaces=[];
+let userLat=null,userLon=null;
+function getEmoji(tags){if(!tags)return'🍽️';if(tags.amenity==='cafe')return'☕';if(tags.amenity==='bar'||tags.amenity==='pub')return'🍺';if(tags.amenity==='fast_food')return'🍔';if(tags.amenity==='bakery'||tags.shop==='bakery')return'🥐';if(tags.cuisine==='pizza')return'🍕';if(tags.cuisine==='italian')return'🍝';if(tags.cuisine==='sushi')return'🍱';return'🍽️';}
+function getType(tags){if(!tags)return'Restaurant';if(tags.amenity==='cafe')return'Cafe';if(tags.amenity==='bar')return'Bar';if(tags.amenity==='pub')return'Pub';if(tags.amenity==='fast_food')return'Fast Food';if(tags.amenity==='bakery')return'Bakery';if(tags.cuisine)return tags.cuisine.charAt(0).toUpperCase()+tags.cuisine.slice(1)+' Restaurant';return'Restaurant';}
+function calcDist(lat1,lon1,lat2,lon2){const R=6371000;const dLat=(lat2-lat1)*Math.PI/180;const dLon=(lon2-lon1)*Math.PI/180;const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;const d=R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));return d<1000?Math.round(d)+'m':(d/1000).toFixed(1)+'km';}
+function formatDist(lat2,lon2){return calcDist(userLat,userLon,lat2,lon2);}
+function showStatus(msg,type){const el=document.getElementById('locStatus');el.style.display='flex';el.className='loc-status '+type;document.getElementById('locStatusText').textContent=msg;}
+function showSkeletons(){const grid=document.createElement('div');grid.className='cafe-grid';for(let i=0;i<8;i++){grid.innerHTML+=`<div class="skel-card"><div class="skel-img skeleton"></div><div class="skel-body"><div class="skel-line skeleton med"></div><div class="skel-line skeleton short"></div><div class="skel-line skeleton med"></div></div></div>`;}document.getElementById('cafeResults').innerHTML='';document.getElementById('cafeResults').appendChild(grid);}
+function detectLocation(){
+  if(!navigator.geolocation){showStatus('Geolocation not supported.','error');return;}
+  const btn=document.getElementById('locBtn');
+  btn.className='loc-btn loading';
+  document.getElementById('locBtnText').textContent='Detecting...';
+  showStatus('📍 Detecting your location...','detecting');
+  showSkeletons();
+  navigator.geolocation.getCurrentPosition(
+    pos=>{userLat=pos.coords.latitude;userLon=pos.coords.longitude;showStatus('✅ Location found! Loading nearby places...','success');fetchNearbyPlaces(userLat,userLon);},
+    err=>{const btn=document.getElementById('locBtn');btn.className='loc-btn';document.getElementById('locBtnText').textContent='Detect My Location';showStatus('❌ Location access denied. Please allow location and try again.','error');document.getElementById('cafeResults').innerHTML=`<div class="nearby-empty"><div class="empty-icon">🔒</div><h3>Location Access Needed</h3><p>Please allow location access in your browser and try again.</p><button class="loc-btn" onclick="detectLocation()"><span>📍</span> Try Again</button></div>`;}
+  );
+}
+async function fetchNearbyPlaces(lat,lon){
+  const radius=1500;
+  const query=`[out:json][timeout:25];(node["amenity"~"cafe|restaurant|fast_food|bar|pub|bakery"](around:${radius},${lat},${lon});way["amenity"~"cafe|restaurant|fast_food|bar|pub|bakery"](around:${radius},${lat},${lon}););out body;>;out skel qt;`;
+  try{
+    const res=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(query)});
+    const data=await res.json();
+    allPlaces=data.elements.filter(e=>e.tags&&e.tags.name&&(e.lat||e.center));
+    allPlaces.sort((a,b)=>{const aLat=a.lat||a.center?.lat,aLon=a.lon||a.center?.lon,bLat=b.lat||b.center?.lat,bLon=b.lon||b.center?.lon;return Math.hypot(aLat-lat,aLon-lon)-Math.hypot(bLat-lat,bLon-lon);});
+    renderCafes(allPlaces);
+    const btn=document.getElementById('locBtn');btn.className='loc-btn done';document.getElementById('locBtnText').textContent='📍 Location Active';
+    document.getElementById('cafeFilters').style.display='flex';
+    showStatus(`✅ Found ${allPlaces.length} places near you!`,'success');
+  }catch(err){
+    showStatus('❌ Failed to load places. Please try again.','error');
+    document.getElementById('cafeResults').innerHTML=`<div class="nearby-empty"><div class="empty-icon">😞</div><h3>Something Went Wrong</h3><p>Could not load nearby places. Please check your internet and try again.</p><button class="loc-btn" onclick="detectLocation()"><span>🔄</span> Try Again</button></div>`;
+  }
+}
+function renderCafes(places){
+  const container=document.getElementById('cafeResults');
+  if(!places||places.length===0){container.innerHTML=`<div class="nearby-empty"><div class="empty-icon">🔍</div><h3>No Places Found Nearby</h3><p>No cafes or restaurants found within 1.5km. Try again later.</p></div>`;return;}
+  const grid=document.createElement('div');grid.className='cafe-grid';
+  places.slice(0,12).forEach(place=>{
+    const lat=place.lat||place.center?.lat,lon=place.lon||place.center?.lon;
+    const name=place.tags.name||'Unknown Place';
+    const emoji=getEmoji(place.tags),type=getType(place.tags),dist=formatDist(lat,lon);
+    const addr=place.tags['addr:street']?(place.tags['addr:housenumber']?place.tags['addr:housenumber']+' ':'')+place.tags['addr:street']:'Nearby';
+    const mapsUrl=`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+    const rating=(3.5+Math.random()*1.5).toFixed(1);
+    const stars='★'.repeat(Math.round(rating))+'☆'.repeat(5-Math.round(rating));
+    const bgColors=['#0f1a0f','#0a0f1a','#1a0f0a','#0f0a1a','#0a1a0f'];
+    const bg=bgColors[Math.floor(Math.random()*bgColors.length)];
+    grid.innerHTML+=`<a class="cafe-card" href="${mapsUrl}" target="_blank"><div class="cafe-img" style="background:linear-gradient(135deg,${bg},#1a1a1a)">${emoji}<span class="cafe-open">✅ Near You</span><span class="cafe-dist">📍 ${dist}</span></div><div class="cafe-body"><div class="cafe-type">${type}</div><div class="cafe-name">${name}</div><div class="cafe-addr">📍 ${addr}</div><div class="cafe-meta"><div class="cafe-rating"><span style="color:#ffd600">${stars}</span> ${rating}</div><a class="cafe-btn" href="${mapsUrl}" target="_blank">Directions →</a></div></div></a>`;
+  });
+  container.innerHTML='';container.appendChild(grid);
+  grid.querySelectorAll('.cafe-card').forEach((card,i)=>{card.style.opacity='0';card.style.transform='translateY(20px)';setTimeout(()=>{card.style.transition='all 0.4s ease';card.style.opacity='1';card.style.transform='translateY(0)';},i*80);});
+}
+function filterCafes(type,btn){
+  document.querySelectorAll('.cafe-filter').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(type==='all'){renderCafes(allPlaces);return;}
+  const filtered=allPlaces.filter(p=>p.tags&&p.tags.amenity===type);
+  renderCafes(filtered.length?filtered:allPlaces);
+}
+setTimeout(()=>{if(navigator.geolocation)detectLocation();},2000);
+const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.style.animation='fadeUp 0.5s ease forwards';e.target.style.opacity='1';}});},{threshold:0.08});
+document.querySelectorAll('.cat-card,.deal-card,.step,.testi-card,.trust-item').forEach(el=>{el.style.opacity='0';obs.observe(el);});
+</script>
+</body>
+</html>
